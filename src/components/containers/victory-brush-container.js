@@ -66,6 +66,7 @@ export const brushContainerMixin = (base) => class VictoryBrushContainer extends
           return props.disable ? {} : BrushHelpers.onMouseUp(evt, targetProps);
         },
         onMouseLeave: (evt, targetProps) => {
+          // return props.disable || props.newPropName ? {} : BrushHelpers.onMouseLeave(evt, targetProps);
           return props.disable ? {} : BrushHelpers.onMouseLeave(evt, targetProps);
         },
         onTouchCancel: (evt, targetProps) => {

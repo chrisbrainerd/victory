@@ -192,15 +192,30 @@ const Helpers = {
     if (!targetProps.isPanning && !targetProps.isSelecting) {
       return {};
     }
+  // console.log('mousemove');
+  // console.log('|||evt', evt)    
+  // console.log('|||targetProps', targetProps)
+  // console.log('|||this.onMouseUp', this.onMouseUp)
     const {
       brushDimension, scale, isPanning, isSelecting, fullDomainBox, onBrushDomainChange,
       allowResize, allowDrag
     } = targetProps;
-    const { x, y } = Selection.getSVGEventCoordinates(evt);
-    // Ignore events that occur outside of the maximum domain region
-    if ((!allowResize && !allowDrag) || !this.withinBounds({ x, y }, fullDomainBox)) {
-      return {};
+    let x;
+    let y;
+    
+    try {
+      const svg = Selection.getSVGEventCoordinates(evt);
+      x = svg.x;
+      y = svg.y;
+    } catch (e) {
+      x = evt.clientX;
+      y = evt.clientY;
     }
+    console.log('|||fullDomainBox', fullDomainBox)
+    // Ignore events that occur outside of the maximum domain region
+    // if ((!allowResize && !allowDrag) || !this.withinBounds({ x, y }, fullDomainBox)) {
+    //   return {};
+    // }
     if (allowDrag && isPanning) {
       const { startX, startY } = targetProps;
       const pannedBox = this.panBox(targetProps, { x, y });
@@ -227,7 +242,7 @@ const Helpers = {
       const y2 = brushDimension !== "x" ? y : targetProps.y2;
       const currentDomain =
         Selection.getBounds({ x2, y2, x1: targetProps.x1, y1: targetProps.y1, scale });
-
+      console.log('|||currentDomain', currentDomain)
       const mutatedProps = { x2, y2, currentDomain };
       if (isFunction(onBrushDomainChange)) {
         onBrushDomainChange(currentDomain, defaults({}, mutatedProps, targetProps));
@@ -241,6 +256,7 @@ const Helpers = {
   },
 
   onMouseUp(evt, targetProps) {
+    evt.preventDefault();
     const {
       x1, y1, x2, y2, onBrushDomainChange, domain, allowResize, defaultBrushArea
     } = targetProps;
@@ -263,7 +279,19 @@ const Helpers = {
     }];
   },
 
-  onMouseLeave(evt) {
+  onMouseLeave(evt, targetProps) {
+
+    const body = document.querySelector("body");
+
+    const { target } = evt;
+    const moveHandler = (event) => {this.onMouseMove(event, targetProps);};
+    body.addEventListener("mousemove", moveHandler);
+    body.addEventListener("mouseup", (event) => {
+      if (target) {target.removeEventListener("mousemove", moveHandler);}
+      body.removeEventListener("mousemove", moveHandler);
+      this.onMouseUp(event, targetProps);
+    });
+
     if (evt.target.nodeName === "svg") {
       return [{
         target: "parent",
